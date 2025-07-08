@@ -13,9 +13,16 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    environment: my_dev
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Set DNS to Google's DNS
+      run: |
+        echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+        echo "nameserver 8.8.4.4" | sudo tee -a /etc/resolv.conf
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         curl -LsSf https://astral.sh/uv/install.sh | sh

@@ -4,9 +4,12 @@
 name: arXiv-daily-ai-enhanced
 
 on:
-  schedule:
-    - cron: "30 16 * * *"
   workflow_dispatch:
+    # 手动触发（无法限制分支，仅可在Actions界面选择分支）
+
+  schedule:
+    - cron: "0 18 * * *"      
+    # GitHub Actions 不支持在 schedule 下限制分支
 
 
 jobs:
@@ -208,12 +211,12 @@ jobs:
         # 尝试推送，如果失败则拉取并重试 / Try to push, if failed then pull and retry
         for i in {1..3}; do
           echo "推送尝试 $i / Push attempt $i"
-          if git push origin main; then
+          if git push origin my-dev; then
             echo "推送成功 / Push successful"
             break
           else
             echo "推送失败，拉取最新变更... / Push failed, pulling latest changes..."
-            git pull origin main --no-edit || true
+            git pull origin my-dev --no-edit || true
             if [ $i -eq 3 ]; then
               echo "3次尝试后推送失败 / Failed to push after 3 attempts"
               exit 1

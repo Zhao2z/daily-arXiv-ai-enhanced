@@ -223,3 +223,10 @@ jobs:
             fi
           fi
         done
+
+    - name: Trigger GitHub Pages build
+      if: steps.dedup_check.outputs.has_new_content == 'true'
+      uses: peter-evans/repository-dispatch@v3
+      with:
+        # token: ${{ secrets.GITHUB_TOKEN }}
+        event-type: trigger-pages-deploy

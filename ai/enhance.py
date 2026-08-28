@@ -24,6 +24,18 @@ if os.path.exists('.env'):
 template = open("template.txt", "r").read()
 system = open("system.txt", "r").read()
 
+FALLBACK_AI = {
+    "tldr": "Error",
+    "motivation": "Error",
+    "method": "Error",
+    "result": "Error",
+    "conclusion": "Error",
+}
+
+MODEL_ALIASES = {
+    "deepseek-chat": "deepseek-v4-flash",
+}
+
 def parse_args():
     """解析命令行参数"""
     parser = argparse.ArgumentParser()
@@ -56,14 +68,11 @@ def process_single_item(chain, item: Dict, language: str) -> Dict:
                 print(f"Failed to fix JSON for {item['id']}: {json_e} {json_str}", file=sys.stderr)
         
         # 如果修复失败，返回错误状态
-        item['AI'] = {
-            "tldr": "Error",
-            "motivation": "Error",
-            "method": "Error",
-            "result": "Error",
-            "conclusion": "Error"
-        }
+        item['AI'] = FALLBACK_AI.copy()
     return item
+
+def normalize_model_name(model_name: str) -> str:
+    return MODEL_ALIASES.get(model_name, model_name)
 
 def process_all_items(data: List[Dict], model_name: str, language: str, max_workers: int) -> List[Dict]:
     """并行处理所有数据项"""
@@ -98,14 +107,16 @@ def process_all_items(data: List[Dict], model_name: str, language: str, max_work
                 processed_data[idx] = result
             except Exception as e:
                 print(f"Item at index {idx} generated an exception: {e}", file=sys.stderr)
-                # 保持原始数据
-                processed_data[idx] = data[idx]
+                # 保持原始数据，并填充兜底AI字段，避免后续转换失败
+                failed_item = data[idx].copy()
+                failed_item['AI'] = FALLBACK_AI.copy()
+                processed_data[idx] = failed_item
     
     return processed_data
 
 def main():
     args = parse_args()
-    model_name = os.environ.get("MODEL_NAME", 'deepseek-chat')
+    model_name = normalize_model_name(os.environ.get("MODEL_NAME", 'deepseek-v4-flash'))
     language = os.environ.get("LANGUAGE", 'Chinese')
 
     # 检查并删除目标文件
